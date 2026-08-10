@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart School System - SD/SMP Integrated Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Plus Jakarta Sans) -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            purple: '#6C5CE7',
+                            pink: '#FD79A8',
+                            yellow: '#FDCB6E',
+                            blue: '#0984E3',
+                            green: '#00B894',
+                            bg: '#F4F7FE'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .btn-bounce:hover {
+            transform: translateY(-2px);
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-brand-bg font-sans text-slate-800 min-h-screen">
+
+    <!-- TOP NAVBAR CERIA -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-purple to-brand-pink flex items-center justify-center text-white text-2xl shadow-lg shadow-brand-purple/30 font-black">
+                    🎓
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-900 tracking-tight flex items-center gap-2">
+                        SMART SCHOOL <span class="bg-brand-yellow/30 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">SD & SMP</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 font-medium">Sistem Terpadu: Presensi, Perpustakaan & Inventaris</p>
+                </div>
+            </div>
+
+            <!-- STATUS KONEKSI & TOGGLE MODE -->
+            <div class="flex items-center gap-4">
+                <span id="db-status" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> Menghubungkan...
+                </span>
+                <div class="hidden md:flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl text-xs font-bold text-slate-600">
+                    <button onclick="switchTab('presensi')" class="tab-btn px-4 py-2 rounded-lg transition-all" id="btn-tab-presensi">📊 Presensi</button>
+                    <button onclick="switchTab('perpustakaan')" class="tab-btn px-4 py-2 rounded-lg transition-all" id="btn-tab-perpustakaan">📚 Perpustakaan</button>
+                    <button onclick="switchTab('inventaris')" class="tab-btn px-4 py-2 rounded-lg transition-all" id="btn-tab-inventaris">📦 Inventaris</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MOBILE TABS -->
+        <div class="flex md:hidden border-t border-slate-200 bg-white px-2 py-2 gap-1 overflow-x-auto text-xs font-bold">
+            <button onclick="switchTab('presensi')" class="tab-btn flex-1 py-2 rounded-lg text-center" id="btn-tab-presensi-m">Presensi</button>
+            <button onclick="switchTab('perpustakaan')" class="tab-btn flex-1 py-2 rounded-lg text-center" id="btn-tab-perpustakaan-m">Perpustakaan</button>
+            <button onclick="switchTab('inventaris')" class="tab-btn flex-1 py-2 rounded-lg text-center" id="btn-tab-inventaris-m">Inventaris</button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================================================================= -->
+        <!-- MODULE 1: PRESENSI SISWA -->
+        <!-- ================================================================= -->
+        <section id="modul-presensi" class="space-y-6">
+            <!-- STATS CARDS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-user-check"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">Total Hadir</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800" id="stat-hadir">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-file-signature"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">Izin Hari Ini</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800" id="stat-izin">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-notes-medical"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">Sakit</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800" id="stat-sakit">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-user-xmark"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold">Tanpa Keterangan</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800" id="stat-alpa">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- FORM PRESENSI -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-brand-purple/10 text-brand-purple flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-pen-to-square"></i></div>
+                        <div>
+                            <h2 class="font-bold text-lg text-slate-900">Catat Presensi Harian</h2>
+                            <p class="text-xs text-slate-500">Input kehadiran siswa oleh Wali Kelas</p>
+                        </div>
+                    </div>
+
+                    <form id="form-presensi" onsubmit="handlePresensiSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal</label>
+                            <input type="date" id="presensi-tanggal" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Siswa</label>
+                            <input type="text" id="presensi-nama" placeholder="Contoh: Ani Wijaya" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kelas</label>
+                                <select id="presensi-kelas" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm font-medium">
+                                    <option value="Kelas 1">Kelas 1 SD</option>
+                                    <option value="Kelas 2">Kelas 2 SD</option>
+                                    <option value="Kelas 3">Kelas 3 SD</option>
+                                    <option value="Kelas 4">Kelas 4 SD</option>
+                                    <option value="Kelas 5">Kelas 5 SD</option>
+                                    <option value="Kelas 6">Kelas 6 SD</option>
+                                    <option value="Kelas 7">Kelas 7 SMP</option>
+                                    <option value="Kelas 8">Kelas 8 SMP</option>
+                                    <option value="Kelas 9">Kelas 9 SMP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Status</label>
+                                <select id="presensi-status" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm font-semibold">
+                                    <option value="Hadir">✅ Hadir</option>
+                                    <option value="Izin">✉️ Izin</option>
+                                    <option value="Sakit">🏥 Sakit</option>
+                                    <option value="Alpa">❌ Alpa</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Catatan</label>
+                            <textarea id="presensi-keterangan" rows="2" placeholder="Sakit demam / Ada acara keluarga..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-brand-purple hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-purple/30 transition-all btn-bounce text-sm">
+                            <i class="fa-solid fa-paper-plane mr-2"></i> Simpan Data Presensi
+                        </button>
+                    </form>
+                </div>
+
+                <!-- TABEL DATA PRESENSI -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="font-bold text-lg text-slate-900">Jurnal Presensi Siswa</h2>
+                            <input type="text" id="search-presensi" onkeyup="filterPresensi()" placeholder="Cari nama / kelas..." class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs w-48">
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase font-bold">
+                                        <th class="py-3 px-2">Tanggal</th>
+                                        <th class="py-3 px-2">Siswa</th>
+                                        <th class="py-3 px-2">Kelas</th>
+                                        <th class="py-3 px-2">Status</th>
+                                        <th class="py-3 px-2">Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-presensi-body" class="text-sm divide-y divide-slate-100">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- MODULE 2: PERPUSTAKAAN DIGITAL -->
+        <!-- ================================================================= -->
+        <section id="modul-perpustakaan" class="space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- FORM SIRKULASI BUKU -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-brand-blue/10 text-brand-blue flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-book-bookmark"></i></div>
+                        <div>
+                            <h2 class="font-bold text-lg text-slate-900">Peminjaman Buku</h2>
+                            <p class="text-xs text-slate-500">Sirkulasi Perpustakaan Sekolah</p>
+                        </div>
+                    </div>
+
+                    <form id="form-perpus" onsubmit="handlePerpusSubmit(event)" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kode Buku</label>
+                                <input type="text" id="perpus-kode" placeholder="BK-001" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-blue text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Peminjam</label>
+                                <select id="perpus-tipe" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-blue text-sm font-semibold">
+                                    <option value="Siswa">Siswa</option>
+                                    <option value="Guru">Guru / Staf</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Judul Buku</label>
+                            <input type="text" id="perpus-judul" placeholder="Matematika Kelas 5 / Laskar Pelangi" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-blue text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Peminjam</label>
+                            <input type="text" id="perpus-peminjam" placeholder="Budi Pratama" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-blue text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Tgl Pinjam</label>
+                                <input type="date" id="perpus-tgl-pinjam" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-blue text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Batas Kembali</label>
+                                <input type="date" id="perpus-tgl-kembali" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-blue text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-brand-blue hover:bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-blue/30 transition-all btn-bounce text-sm">
+                            <i class="fa-solid fa-plus mr-2"></i> Transaksi Peminjaman Baru
+                        </button>
+                    </form>
+                </div>
+
+                <!-- TABEL DATA BUKU DIPINJAM -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="font-bold text-lg text-slate-900">Daftar Peminjaman Aktif</h2>
+                        <span class="text-xs bg-blue-50 text-brand-blue font-bold px-3 py-1 rounded-full" id="total-pinjam-count">0 Buku Dipinjam</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase font-bold">
+                                    <th class="py-3 px-2">Buku</th>
+                                    <th class="py-3 px-2">Peminjam</th>
+                                    <th class="py-3 px-2">Tgl Pinjam</th>
+                                    <th class="py-3 px-2">Status</th>
+                                    <th class="py-3 px-2">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-perpus-body" class="text-sm divide-y divide-slate-100">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- MODULE 3: INVENTARIS SARANA PRASARANA -->
+        <!-- ================================================================= -->
+        <section id="modul-inventaris" class="space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- FORM INVENTARIS -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-brand-green/10 text-brand-green flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-boxes-packing"></i></div>
+                        <div>
+                            <h2 class="font-bold text-lg text-slate-900">Registrasi Inventaris</h2>
+                            <p class="text-xs text-slate-500">Pencatatan Aset & Sarpra Sekolah</p>
+                        </div>
+                    </div>
+
+                    <form id="form-inventaris" onsubmit="handleInventarisSubmit(event)" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kode Barang</label>
+                                <input type="text" id="inv-kode" placeholder="INV-LAB-01" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kategori</label>
+                                <select id="inv-kategori" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm font-medium">
+                                    <option value="Elektronik">Elektronik / Proyektor</option>
+                                    <option value="Mebel">Mebel (Meja/Kursi)</option>
+                                    <option value="Olahraga">Alat Olahraga</option>
+                                    <option value="Lab">Peralatan Lab</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Barang / Spesifikasi</label>
+                            <input type="text" id="inv-nama" placeholder="Proyektor Epson EB-E500" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Lokasi Ruangan</label>
+                                <input type="text" id="inv-lokasi" placeholder="Lab Komputer / Kelas 6A" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Jumlah</label>
+                                <input type="number" id="inv-jumlah" value="1" min="1" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kondisi</label>
+                                <select id="inv-kondisi" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm font-semibold">
+                                    <option value="Baik">🟢 Baik</option>
+                                    <option value="Perlu Perbaikan">🟡 Perlu Perbaikan</option>
+                                    <option value="Rusak Berat">🔴 Rusak Berat</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Penanggung Jawab</label>
+                                <input type="text" id="inv-pj" placeholder="Pak Slamet (Sarpras)" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-brand-green hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-green/30 transition-all btn-bounce text-sm">
+                            <i class="fa-solid fa-box-archive mr-2"></i> Tambahkan Aset Inventaris
+                        </button>
+                    </form>
+                </div>
+
+                <!-- TABEL DATA INVENTARIS -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="font-bold text-lg text-slate-900">Master Inventaris & Aset Sekolah</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase font-bold">
+                                    <th class="py-3 px-2">Kode</th>
+                                    <th class="py-3 px-2">Barang</th>
+                                    <th class="py-3 px-2">Lokasi</th>
+                                    <th class="py-3 px-2">Jumlah</th>
+                                    <th class="py-3 px-2">Kondisi</th>
+                                    <th class="py-3 px-2">PJ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-inventaris-body" class="text-sm divide-y divide-slate-100">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SCRIPT APPLICATION -->
+    <script>
+        // KONEKSI SUPABASE (Ganti jika memakai project URL/Key kamu sendiri)
+        const SUPABASE_URL = "https://ztgjmyjrtrlyrgntvtny.supabase.co"; // Ganti dengan Supabase URL kamu
+        const SUPABASE_KEY = "sb_publishable_GGh8txjx_3OFYwmTGdccjQ_zkxRYqep"; // Ganti dengan Anon Key kamu
+        
+        let _supabase;
+        try {
+            _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            document.getElementById('db-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Supabase Connected';
+            document.getElementById('db-status').className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700';
+        } catch(e) {
+            console.error(e);
+        }
+
+        // TAB NAVIGATION LOGIC
+        function switchTab(tab) {
+            ['presensi', 'perpustakaan', 'inventaris'].forEach(t => {
+                document.getElementById(`modul-${t}`).classList.add('hidden');
+                document.getElementById(`btn-tab-${t}`).className = 'tab-btn px-4 py-2 rounded-lg transition-all text-slate-600 hover:bg-slate-200';
+            });
+
+            document.getElementById(`modul-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-tab-${tab}`);
+            
+            if(tab === 'presensi') activeBtn.className = 'tab-btn px-4 py-2 rounded-lg transition-all bg-brand-purple text-white shadow-md';
+            if(tab === 'perpustakaan') activeBtn.className = 'tab-btn px-4 py-2 rounded-lg transition-all bg-brand-blue text-white shadow-md';
+            if(tab === 'inventaris') activeBtn.className = 'tab-btn px-4 py-2 rounded-lg transition-all bg-brand-green text-white shadow-md';
+        }
+
+        // INITIAL LOAD
+        window.onload = function() {
+            switchTab('presensi');
+            document.getElementById('presensi-tanggal').valueAsDate = new Date();
+            document.getElementById('perpus-tgl-pinjam').valueAsDate = new Date();
+            
+            // Set H+7 untuk tanggal kembali
+            const nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            document.getElementById('perpus-tgl-kembali').valueAsDate = nextWeek;
+
+            loadPresensiData();
+            loadPerpusData();
+            loadInventarisData();
+        }
+
+        // --- PRESENSI LOGIC ---
+        let presensiCache = [];
+
+        async function handlePresensiSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                tanggal: document.getElementById('presensi-tanggal').value,
+                nama_siswa: document.getElementById('presensi-nama').value,
+                kelas: document.getElementById('presensi-kelas').value,
+                status: document.getElementById('presensi-status').value,
+                keterangan: document.getElementById('presensi-keterangan').value,
+                waktu_input: new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})
+            };
+
+            const { data, error } = await _supabase.from('presensi_sekolah').insert([payload]);
+            if(error) {
+                alert('Gagal simpan presensi: ' + error.message);
+            } else {
+                alert('✅ Data presensi berhasil dicatat!');
+                document.getElementById('presensi-nama').value = '';
+                document.getElementById('presensi-keterangan').value = '';
+                loadPresensiData();
+            }
+        }
+
+        async function loadPresensiData() {
+            const { data, error } = await _supabase.from('presensi_sekolah').select('*').order('id', {ascending: false});
+            if(error) return;
+
+            presensiCache = data;
+            renderPresensiTable(data);
+            
+            // Calculate Stats
+            document.getElementById('stat-hadir').innerText = data.filter(d => d.status === 'Hadir').length;
+            document.getElementById('stat-izin').innerText = data.filter(d => d.status === 'Izin').length;
+            document.getElementById('stat-sakit').innerText = data.filter(d => d.status === 'Sakit').length;
+            document.getElementById('stat-alpa').innerText = data.filter(d => d.status === 'Alpa').length;
+        }
+
+        function renderPresensiTable(data) {
+            const tbody = document.getElementById('table-presensi-body');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                let badgeClass = 'bg-emerald-100 text-emerald-700';
+                if(row.status === 'Izin') badgeClass = 'bg-blue-100 text-blue-700';
+                if(row.status === 'Sakit') badgeClass = 'bg-amber-100 text-amber-700';
+                if(row.status === 'Alpa') badgeClass = 'bg-rose-100 text-rose-700';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-2 font-medium">${row.tanggal}</td>
+                        <td class="py-3 px-2 font-bold text-slate-800">${row.nama_siswa}</td>
+                        <td class="py-3 px-2 text-slate-600">${row.kelas}</td>
+                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">${row.status}</span></td>
+                        <td class="py-3 px-2 text-xs text-slate-500">${row.keterangan || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterPresensi() {
+            const q = document.getElementById('search-presensi').value.toLowerCase();
+            const filtered = presensiCache.filter(d => d.nama_siswa.toLowerCase().includes(q) || d.kelas.toLowerCase().includes(q));
+            renderPresensiTable(filtered);
+        }
+
+        // --- PERPUSTAKAAN LOGIC ---
+        async function handlePerpusSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                kode_buku: document.getElementById('perpus-kode').value,
+                judul_buku: document.getElementById('perpus-judul').value,
+                peminjam: document.getElementById('perpus-peminjam').value,
+                status_peminjam: document.getElementById('perpus-tipe').value,
+                tanggal_pinjam: document.getElementById('perpus-tgl-pinjam').value,
+                tanggal_kembali: document.getElementById('perpus-tgl-kembali').value,
+                status_buku: 'Dipinjam'
+            };
+
+            const { error } = await _supabase.from('perpustakaan_sekolah').insert([payload]);
+            if(error) alert('Error: ' + error.message);
+            else {
+                alert('✅ Transaksi peminjaman dicatat!');
+                document.getElementById('form-perpus').reset();
+                loadPerpusData();
+            }
+        }
+
+        async function loadPerpusData() {
+            const { data, error } = await _supabase.from('perpustakaan_sekolah').select('*').order('id', {ascending: false});
+            if(error) return;
+
+            const tbody = document.getElementById('table-perpus-body');
+            tbody.innerHTML = '';
+
+            const dipinjam = data.filter(d => d.status_buku === 'Dipinjam');
+            document.getElementById('total-pinjam-count').innerText = `${dipinjam.length} Buku Dipinjam`;
+
+            data.forEach(row => {
+                const isDipinjam = row.status_buku === 'Dipinjam';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-2"><span class="font-bold text-slate-800">${row.judul_buku}</span><br><span class="text-xs text-slate-400">${row.kode_buku}</span></td>
+                        <td class="py-3 px-2"><span class="font-medium text-slate-700">${row.peminjam}</span><br><span class="text-xs text-slate-400">${row.status_peminjam}</span></td>
+                        <td class="py-3 px-2 text-xs">${row.tanggal_pinjam} s/d <br><span class="font-bold">${row.tanggal_kembali}</span></td>
+                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${isDipinjam ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${row.status_buku}</span></td>
+                        <td class="py-3 px-2">
+                            ${isDipinjam ? `<button onclick="kembalikanBuku(${row.id})" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg">Kembalikan</button>` : '<span class="text-xs text-slate-400 font-medium">Selesai</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function kembalikanBuku(id) {
+            if(confirm('Proses pengembalian buku ini?')) {
+                const { error } = await _supabase.from('perpustakaan_sekolah').update({ status_buku: 'Dikembalikan' }).eq('id', id);
+                if(!error) loadPerpusData();
+            }
+        }
+
+        // --- INVENTARIS LOGIC ---
+        async function handleInventarisSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                kode_barang: document.getElementById('inv-kode').value,
+                nama_barang: document.getElementById('inv-nama').value,
+                kategori: document.getElementById('inv-kategori').value,
+                lokasi: document.getElementById('inv-lokasi').value,
+                jumlah: parseInt(document.getElementById('inv-jumlah').value),
+                kondisi: document.getElementById('inv-kondisi').value,
+                penanggung_jawab: document.getElementById('inv-pj').value
+            };
+
+            const { error } = await _supabase.from('inventaris_sekolah').insert([payload]);
+            if(error) alert('Error: ' + error.message);
+            else {
+                alert('✅ Barang inventaris berhasil ditambahkan!');
+                document.getElementById('form-inventaris').reset();
+                loadInventarisData();
+            }
+        }
+
+        async function loadInventarisData() {
+            const { data, error } = await _supabase.from('inventaris_sekolah').select('*').order('id', {ascending: false});
+            if(error) return;
+
+            const tbody = document.getElementById('table-inventaris-body');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                let badgeClass = 'bg-emerald-100 text-emerald-700';
+                if(row.kondisi === 'Perlu Perbaikan') badgeClass = 'bg-amber-100 text-amber-700';
+                if(row.kondisi === 'Rusak Berat') badgeClass = 'bg-rose-100 text-rose-700';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-2 text-xs font-bold text-slate-500">${row.kode_barang}</td>
+                        <td class="py-3 px-2 font-bold text-slate-800">${row.nama_barang}<br><span class="text-xs text-slate-400 font-normal">${row.kategori}</span></td>
+                        <td class="py-3 px-2 font-medium text-slate-600">${row.lokasi}</td>
+                        <td class="py-3 px-2 font-extrabold text-slate-700">${row.jumlah} Unit</td>
+                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">${row.kondisi}</span></td>
+                        <td class="py-3 px-2 text-xs text-slate-600">${row.penanggung_jawab}</td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
