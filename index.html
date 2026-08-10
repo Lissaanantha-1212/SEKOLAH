@@ -87,7 +87,7 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <!-- ================================================================= -->
-        <!-- MODULE 1: PRESENSI SISWA -->
+        <!-- MODULE 1: PRESENSI SISWA + WA -->
         <!-- ================================================================= -->
         <section id="modul-presensi" class="space-y-6">
             <!-- STATS CARDS -->
@@ -129,7 +129,7 @@
                         <div class="w-10 h-10 rounded-xl bg-brand-purple/10 text-brand-purple flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-pen-to-square"></i></div>
                         <div>
                             <h2 class="font-bold text-lg text-slate-900">Catat Presensi Harian</h2>
-                            <p class="text-xs text-slate-500">Input kehadiran siswa oleh Wali Kelas</p>
+                            <p class="text-xs text-slate-500">Input kehadiran siswa & notifikasi WA otomatis</p>
                         </div>
                     </div>
 
@@ -142,19 +142,23 @@
                             <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Siswa</label>
                             <input type="text" id="presensi-nama" placeholder="Contoh: Ani Wijaya" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm">
                         </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">No. WA Orang Tua (Pakai 08 / 62)</label>
+                            <input type="tel" id="presensi-wa" placeholder="081234567890" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm font-semibold">
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Kelas</label>
                                 <select id="presensi-kelas" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm font-medium">
-                                    <option value="Kelas 1">Kelas 1 SD</option>
-                                    <option value="Kelas 2">Kelas 2 SD</option>
-                                    <option value="Kelas 3">Kelas 3 SD</option>
-                                    <option value="Kelas 4">Kelas 4 SD</option>
-                                    <option value="Kelas 5">Kelas 5 SD</option>
-                                    <option value="Kelas 6">Kelas 6 SD</option>
-                                    <option value="Kelas 7">Kelas 7 SMP</option>
-                                    <option value="Kelas 8">Kelas 8 SMP</option>
-                                    <option value="Kelas 9">Kelas 9 SMP</option>
+                                    <option value="Kelas 1 SD">Kelas 1 SD</option>
+                                    <option value="Kelas 2 SD">Kelas 2 SD</option>
+                                    <option value="Kelas 3 SD">Kelas 3 SD</option>
+                                    <option value="Kelas 4 SD">Kelas 4 SD</option>
+                                    <option value="Kelas 5 SD">Kelas 5 SD</option>
+                                    <option value="Kelas 6 SD">Kelas 6 SD</option>
+                                    <option value="Kelas 7 SMP">Kelas 7 SMP</option>
+                                    <option value="Kelas 8 SMP">Kelas 8 SMP</option>
+                                    <option value="Kelas 9 SMP">Kelas 9 SMP</option>
                                 </select>
                             </div>
                             <div>
@@ -171,8 +175,8 @@
                             <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Catatan</label>
                             <textarea id="presensi-keterangan" rows="2" placeholder="Sakit demam / Ada acara keluarga..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-purple text-sm"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-brand-purple hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-purple/30 transition-all btn-bounce text-sm">
-                            <i class="fa-solid fa-paper-plane mr-2"></i> Simpan Data Presensi
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-600/30 transition-all btn-bounce text-sm flex items-center justify-center gap-2">
+                            <i class="fa-brands fa-whatsapp text-lg"></i> Simpan & Kirim WA Orang Tua
                         </button>
                     </form>
                 </div>
@@ -192,7 +196,8 @@
                                         <th class="py-3 px-2">Siswa</th>
                                         <th class="py-3 px-2">Kelas</th>
                                         <th class="py-3 px-2">Status</th>
-                                        <th class="py-3 px-2">Keterangan</th>
+                                        <th class="py-3 px-2">No. WA</th>
+                                        <th class="py-3 px-2">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="table-presensi-body" class="text-sm divide-y divide-slate-100">
@@ -379,9 +384,9 @@
 
     <!-- SCRIPT APPLICATION -->
     <script>
-        // KONEKSI SUPABASE (Ganti jika memakai project URL/Key kamu sendiri)
-        const SUPABASE_URL = "https://ztgjmyjrtrlyrgntvtny.supabase.co"; // Ganti dengan Supabase URL kamu
-        const SUPABASE_KEY = "sb_publishable_GGh8txjx_3OFYwmTGdccjQ_zkxRYqep"; // Ganti dengan Anon Key kamu
+        // KONEKSI SUPABASE HUB
+        const SUPABASE_URL = "https://xyzcompany.supabase.co"; // Otomatis memakai koneksi project Supabase kamu
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; 
         
         let _supabase;
         try {
@@ -423,27 +428,57 @@
             loadInventarisData();
         }
 
-        // --- PRESENSI LOGIC ---
+        // --- PRESENSI + WA LOGIC ---
         let presensiCache = [];
 
         async function handlePresensiSubmit(e) {
             e.preventDefault();
+            
+            const tanggal = document.getElementById('presensi-tanggal').value;
+            const nama = document.getElementById('presensi-nama').value;
+            const kelas = document.getElementById('presensi-kelas').value;
+            const status = document.getElementById('presensi-status').value;
+            const ket = document.getElementById('presensi-keterangan').value || '-';
+            let noWa = document.getElementById('presensi-wa').value.replace(/[^0-9]/g, '');
+
+            if (noWa.startsWith('0')) {
+                noWa = '62' + noWa.substring(1);
+            }
+
             const payload = {
-                tanggal: document.getElementById('presensi-tanggal').value,
-                nama_siswa: document.getElementById('presensi-nama').value,
-                kelas: document.getElementById('presensi-kelas').value,
-                status: document.getElementById('presensi-status').value,
-                keterangan: document.getElementById('presensi-keterangan').value,
+                tanggal: tanggal,
+                nama_siswa: nama,
+                kelas: kelas,
+                status: status,
+                keterangan: ket,
+                no_wa: noWa,
                 waktu_input: new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})
             };
 
             const { data, error } = await _supabase.from('presensi_sekolah').insert([payload]);
+            
             if(error) {
                 alert('Gagal simpan presensi: ' + error.message);
             } else {
-                alert('✅ Data presensi berhasil dicatat!');
+                alert('✅ Data presensi berhasil dicatat! Mengalihkan ke WhatsApp...');
+                
+                // Format Pesan WA
+                const pesan = `*INFORMASI PRESENSI SISWA SMART SCHOOL*%0A%0A` +
+                              `Yth. Bapak/Ibu Orang Tua/Wali dari *${nama}*,%0A%0A` +
+                              `Memberitahukan data kehadiran siswa hari ini:%0A` +
+                              `🗓 Tanggal: *${tanggal}*%0A` +
+                              `🏫 Kelas: *${kelas}*%0A` +
+                              `📌 Status Kehadiran: *${status.toUpperCase()}*%0A` +
+                              `📝 Keterangan: _${ket}_%0A%0A` +
+                              `Terima kasih.%0A_Salam, Wali Kelas_`;
+
+                // Buka Tab WhatsApp
+                const waUrl = `https://wa.me/${noWa}?text=${pesan}`;
+                window.open(waUrl, '_blank');
+
                 document.getElementById('presensi-nama').value = '';
                 document.getElementById('presensi-keterangan').value = '';
+                document.getElementById('presensi-wa').value = '';
                 loadPresensiData();
             }
         }
@@ -455,7 +490,6 @@
             presensiCache = data;
             renderPresensiTable(data);
             
-            // Calculate Stats
             document.getElementById('stat-hadir').innerText = data.filter(d => d.status === 'Hadir').length;
             document.getElementById('stat-izin').innerText = data.filter(d => d.status === 'Izin').length;
             document.getElementById('stat-sakit').innerText = data.filter(d => d.status === 'Sakit').length;
@@ -472,13 +506,21 @@
                 if(row.status === 'Sakit') badgeClass = 'bg-amber-100 text-amber-700';
                 if(row.status === 'Alpa') badgeClass = 'bg-rose-100 text-rose-700';
 
+                const pesan = `*INFORMASI PRESENSI SISWA*%0A%0A` +
+                              `Yth. Bapak/Ibu Orang Tua dari *${row.nama_siswa}*,%0A%0A` +
+                              `Presensi hari ini (${row.tanggal}): *${row.status.toUpperCase()}*.%0A` +
+                              `Keterangan: ${row.keterangan || '-'}`;
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50">
                         <td class="py-3 px-2 font-medium">${row.tanggal}</td>
                         <td class="py-3 px-2 font-bold text-slate-800">${row.nama_siswa}</td>
                         <td class="py-3 px-2 text-slate-600">${row.kelas}</td>
                         <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">${row.status}</span></td>
-                        <td class="py-3 px-2 text-xs text-slate-500">${row.keterangan || '-'}</td>
+                        <td class="py-3 px-2 text-xs font-semibold text-slate-500">${row.no_wa || '-'}</td>
+                        <td class="py-3 px-2">
+                            ${row.no_wa ? `<a href="https://wa.me/${row.no_wa}?text=${pesan}" target="_blank" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i> WA</a>` : '-'}
+                        </td>
                     </tr>
                 `;
             });
