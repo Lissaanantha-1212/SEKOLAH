@@ -290,7 +290,7 @@
         </section>
 
         <!-- ================================================================= -->
-        <!-- MODULE 3: INVENTARIS SARANA PRASARANA (UPDATED WITH PHOTO & STATS) -->
+        <!-- MODULE 3: INVENTARIS SARANA PRASARANA (WITH FILE UPLOAD) -->
         <!-- ================================================================= -->
         <section id="modul-inventaris" class="space-y-6 hidden">
 
@@ -327,13 +327,13 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- FORM INVENTARIS WITH FOTO -->
+                <!-- FORM INVENTARIS WITH FILE UPLOAD -->
                 <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded-xl bg-brand-green/10 text-brand-green flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-boxes-packing"></i></div>
                         <div>
                             <h2 class="font-bold text-lg text-slate-900">Registrasi Inventaris</h2>
-                            <p class="text-xs text-slate-500">Pencatatan Aset & Bukti Foto Sarpra</p>
+                            <p class="text-xs text-slate-500">Pencatatan Aset & Upload Bukti Foto</p>
                         </div>
                     </div>
 
@@ -381,13 +381,31 @@
                                 <input type="text" id="inv-pj" placeholder="Pak Slamet (Sarpras)" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm">
                             </div>
                         </div>
+
+                        <!-- INPUT FILE UPLOAD FOTO + PREVIEW -->
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Foto Bukti Fisik Barang (URL Gambar)</label>
-                            <input type="url" id="inv-foto" placeholder="https://images.unsplash.com/photo-1517694712202-14dd9538aa97" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-green text-sm">
-                            <p class="text-[10px] text-slate-400 mt-1">*Bisa tempel link foto dari Imgbb, Unsplash, atau WhatsApp Web</p>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Upload Foto Bukti Fisik Barang</label>
+                            <div class="border-2 border-dashed border-slate-200 hover:border-brand-green transition-all rounded-2xl p-4 text-center cursor-pointer relative bg-slate-50/50">
+                                <input type="file" id="inv-foto-file" accept="image/*" onchange="previewSelectedImage(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                
+                                <div id="upload-placeholder" class="space-y-1">
+                                    <div class="w-10 h-10 rounded-full bg-brand-green/10 text-brand-green flex items-center justify-center mx-auto">
+                                        <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-700">Klik untuk upload / Ambil Foto</p>
+                                    <p class="text-[10px] text-slate-400">PNG, JPG, WEBP (Max 2MB)</p>
+                                </div>
+
+                                <!-- PREVIEW AREA -->
+                                <div id="upload-preview-container" class="hidden relative">
+                                    <img id="upload-preview-img" src="" alt="Preview Foto" class="max-h-36 mx-auto rounded-xl object-cover border border-slate-200 shadow-sm">
+                                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full inline-block mt-2">✓ Foto Terpilih</span>
+                                </div>
+                            </div>
                         </div>
-                        <button type="submit" class="w-full bg-brand-green hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-green/30 transition-all btn-bounce text-sm flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-camera"></i> Tambahkan Aset + Bukti Foto
+
+                        <button type="submit" id="btn-submit-inv" class="w-full bg-brand-green hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-green/30 transition-all btn-bounce text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Simpan Aset + Foto
                         </button>
                     </form>
                 </div>
@@ -645,13 +663,51 @@
             }
         }
 
-        // --- INVENTARIS LOGIC WITH PHOTO ---
+        // --- INVENTARIS LOGIC WITH FILE UPLOAD BASE64 ---
         let inventarisCache = [];
+        let selectedBase64Image = '';
+
+        // Helper Konversi File Gambar ke Base64 (Dipress agar enteng)
+        function previewSelectedImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Kompres & BACA FILE GAMBAR
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; // Ukuran optimal agar database hemat
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = (img.width > MAX_WIDTH) ? MAX_WIDTH : img.width;
+                    canvas.height = (img.width > MAX_WIDTH) ? (img.height * scaleSize) : img.height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Konversi ke Base64 JPG
+                    selectedBase64Image = canvas.toDataURL('image/jpeg', 0.7);
+
+                    // Tampilkan Preview
+                    document.getElementById('upload-preview-img').src = selectedBase64Image;
+                    document.getElementById('upload-placeholder').classList.add('hidden');
+                    document.getElementById('upload-preview-container').classList.remove('hidden');
+                }
+            }
+            reader.readAsDataURL(file);
+        }
 
         async function handleInventarisSubmit(e) {
             e.preventDefault();
-            const fotoUrlInput = document.getElementById('inv-foto').value;
             
+            const btnSubmit = document.getElementById('btn-submit-inv');
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Menyimpan...';
+            btnSubmit.disabled = true;
+
+            const fotoUrlFinal = selectedBase64Image || 'https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=300&q=80';
+
             const payload = {
                 kode_barang: document.getElementById('inv-kode').value,
                 nama_barang: document.getElementById('inv-nama').value,
@@ -660,14 +716,21 @@
                 jumlah: parseInt(document.getElementById('inv-jumlah').value),
                 kondisi: document.getElementById('inv-kondisi').value,
                 penanggung_jawab: document.getElementById('inv-pj').value,
-                foto_url: fotoUrlInput || 'https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=300&q=80' // Placeholder jika kosong
+                foto_url: fotoUrlFinal
             };
 
             const { error } = await _supabase.from('inventaris_sekolah').insert([payload]);
+            
+            btnSubmit.innerHTML = '<i class="fa-solid fa-plus"></i> Simpan Aset + Foto';
+            btnSubmit.disabled = false;
+
             if(error) alert('Error: ' + error.message);
             else {
-                alert('✅ Barang inventaris + foto berhasil ditambahkan!');
+                alert('✅ Barang inventaris + foto berhasil disimpan!');
                 document.getElementById('form-inventaris').reset();
+                selectedBase64Image = '';
+                document.getElementById('upload-placeholder').classList.remove('hidden');
+                document.getElementById('upload-preview-container').classList.add('hidden');
                 loadInventarisData();
             }
         }
